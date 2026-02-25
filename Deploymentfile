@@ -1,0 +1,13 @@
+npm init -y
+npm install express mongoose bcrypt express-session dotenv
+
+npm i 
+
+docker build -t linkmgr1 .
+docker run --rm -d -p 3000:3000 --name linkmgr1 --env-file .env linkmgr1
+
+.env
+PORT=3000
+MONGODB_URI=mongodb+srv://Mongo:*****mongodbpass****@production.nskmfpu.mongodb.net/linkmgr?retryWrites=true&w=majority
+MONGODB_DB=linkmgr
+SESSION_SECRET=secratepassword
