@@ -45,8 +45,17 @@ function authed(req, res, next) {
 // --- base template ---
 function pageTemplate(body) {
   return `<!doctype html><html><head><meta charset="utf-8"><title>Link Manager</title>
-   <link rel="icon" type="image/x-icon" href="./img.png">
+    <link rel="icon" type="image/x-icon" href="./img.png">
   </head>
+  <style>
+    a {
+      display: inline-block;
+      max-width: 300px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
   <body>
     <h2 align="center">Link Manager</h2>
     ${body}
@@ -99,7 +108,7 @@ function showLogin(){ document.getElementById("registerForm").style.display = "n
 `);
 
 // --- dashboard ---
-function dash(user, links) {
+function dash(user, links, page, totalPages) {
   const rows = links.map(l => `<tr class="entry-row">
     <td>${l.title || ""}</td>
     <td><a href="${l.url || "#"}" target="_blank">${l.url || ""}</a></td>
@@ -109,6 +118,11 @@ function dash(user, links) {
       <a href="/del/${l._id}" onclick="return confirm('Delete?')">Delete</a>
     </td>
   </tr>`).join("");
+
+  // Pagination navigation styled like the image
+  const prev = page > 1 ? `<a href="/vault?page=${page - 1}">Prev</a>` : "";
+  const next = page < totalPages ? `<a href="/vault?page=${page + 1}">Next</a>` : "";
+  const nav = `<p align="center">${prev} Page ${page} of ${totalPages || 1} ${next}</p>`;
 
   return pageTemplate(`
 <p align="center">
@@ -153,6 +167,8 @@ function dash(user, links) {
   ${rows || `<tr class="entry-row"><td colspan="4" align="center">No links found</td></tr>`}
 </table>
 
+${nav}
+
 <script>
 document.getElementById("searchBox").addEventListener("input", function() {
   const term = this.value.toLowerCase();
@@ -188,8 +204,20 @@ app.get("/logout", (req, res) => req.session.destroy(() => res.redirect("/")));
 
 app.get("/vault", authed, async (req, res) => {
   const u = await User.findById(req.session.uid);
-  const links = await Link.find({ userId: u._id }).sort({ _id: -1 }).lean();
-  res.send(dash(u, links));
+  
+  // Pagination Math
+  const limit = 20;
+  const page = parseInt(req.query.page) || 1;
+  const totalLinks = await Link.countDocuments({ userId: u._id });
+  const totalPages = Math.ceil(totalLinks / limit);
+
+  const links = await Link.find({ userId: u._id })
+    .sort({ _id: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  res.send(dash(u, links, page, totalPages));
 });
 
 app.post("/add", authed, async (req, res) => {
