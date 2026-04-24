@@ -1,13 +1,23 @@
-sudo apt install -y nginx
-sudo nano /etc/nginx/nginx.conf
-sudo nano /etc/nginx/conf.d/app.conf
+.env
+PORT=3000
+MONGODB_URI=mongodb+srv://Mongo:*****mongodbpass****@production.nskmfpu.mongodb.net/linkmanager?retryWrites=true&w=majority
+MONGODB_DB=linkmgr
+SESSION_SECRET=secratepassword
+
+docker build -t linkmanager .
+docker run --rm -d -p 3000:3000 --name linkmanager --env-file .env linkmanager
+
+sudo apt install nginx -y
+sudo systemct start nginx 
+sudo systemctl enable nginx 
+sudo nano /etc/nginx/sites-available/l.shivam-singh.in
 
 server {
     listen 80;
-    server_name l.shivam-singh.in;
+    server_name l.shivam-singh.in localhost;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3000;  # your docker app
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -16,19 +26,12 @@ server {
     }
 }
 
-sudo apt install -y certbot python3-certbot-nginx
+sudo ln -s /etc/nginx/sites-available/l.shivam-singh.in /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo apt install certbot python3-certbot-nginx -y
 sudo certbot --nginx -d l.shivam-singh.in
+Only open 443 port in aws sg
 
 npm init -y
 npm install express mongoose bcrypt express-session dotenv
-
 npm i
-
-docker build -t linkmgr1 .
-docker run --rm -d -p 3000:3000 --name linkmgr1 --env-file .env linkmgr1
-
-.env
-PORT=3000
-MONGODB_URI=mongodb+srv://Mongo:*****mongodbpass****@production.nskmfpu.mongodb.net/linkmgr?retryWrites=true&w=majority
-MONGODB_DB=linkmgr
-SESSION_SECRET=secratepassword
